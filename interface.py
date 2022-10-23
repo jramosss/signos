@@ -8,7 +8,6 @@ from pattern import Pattern
 
 
 SIZE = WIDTH, HEIGHT = 500, 500
-time_point_drawn = 0.2
 pygame.init()
 SCREEN = pygame.display.set_mode(SIZE)
 
@@ -30,6 +29,7 @@ class ScreenPos:
 
 class Game:
     pattern = Pattern()
+    time_point_drawn = 0.4
 
     def __init__(self):
         pygame.display.set_caption("Signos")
@@ -65,35 +65,49 @@ class Game:
         rect = pygame.Rect(color.x_range.start, color.y_range.start, 150, 150)
         pygame.draw.rect(SCREEN, (255, 0, 0), rect, 2)
         pygame.display.update()
-        sleep(time_point_drawn)
+        sleep(self.time_point_drawn)
         self.__init__()
-        sleep(time_point_drawn)
+        sleep(self.time_point_drawn)
+
+    def display_points(self):
+        for action in self.pattern:
+            self.draw_rect_on_region(action)
+
+    def should_decrease_point_drawn_time(self, times_played: int):
+        return times_played % 5 == 0 and times_played != 0 and self.time_point_drawn > 0.1
 
     def start(self):
         user_pattern = []
         self.write_pattern_on_screen(self.pattern)
         points_printed = False
+        times_played = 0
+        displaying_points = False
         while True:
             if not points_printed:
-                for action in self.pattern:
-                    self.draw_rect_on_region(action)
-                    points_printed = True
+                displaying_points = True
+                self.display_points()
+                displaying_points = False
+                points_printed = True
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     sys.exit()
                 clicked = event.type == pygame.MOUSEBUTTONDOWN
-                if clicked:
+                if clicked and not displaying_points:
                     mouse_pos = pygame.mouse.get_pos()
                     color = self.color_match(mouse_pos)
                     if color:
                         user_pattern.append(color)
                         if len(user_pattern) == len(self.pattern):
                             if user_pattern != self.pattern:
+                                times_played = 0
                                 self.reset()
                             else:
+                                times_played += 1
                                 self.pattern.append()
                             points_printed = False
                             user_pattern.clear()
+                            if self.should_decrease_point_drawn_time(times_played):
+                                self.time_point_drawn -= 0.1
                 self.write_pattern_on_screen(self.pattern)
 
 
